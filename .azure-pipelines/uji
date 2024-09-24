@@ -1,0 +1,67 @@
+import sqlite3
+from tkinter import *
+from tkinter import messagebox
+from datetime import datetime
+
+# Membuat koneksi database SQLite
+conn = sqlite3.connect('absensi.db')
+cursor = conn.cursor()
+
+# Membuat tabel jika belum ada
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS absensi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT NOT NULL,
+    waktu_absen TEXT NOT NULL
+)
+''')
+conn.commit()
+
+# Fungsi untuk menambah absensi
+def tambah_absensi():
+    nama = entry_nama.get()
+    if nama == "":
+        messagebox.showwarning("Peringatan", "Nama harus diisi!")
+    else:
+        waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute('INSERT INTO absensi (nama, waktu_absen) VALUES (?, ?)', (nama, waktu))
+        conn.commit()
+        messagebox.showinfo("Sukses", f"Absensi untuk {nama} berhasil!")
+        entry_nama.delete(0, END)
+        tampilkan_data()
+
+# Fungsi untuk menampilkan data absensi
+def tampilkan_data():
+    cursor.execute('SELECT * FROM absensi')
+    records = cursor.fetchall()
+    listbox_data.delete(0, END)  # Hapus data sebelumnya
+    for record in records:
+        listbox_data.insert(END, f"ID: {record[0]} | Nama: {record[1]} | Waktu Absen: {record[2]}")
+
+# Membuat GUI dengan Tkinter
+root = Tk()
+root.title("Aplikasi Absensi Kehadiran")
+
+# Label dan Entry untuk input nama
+label_nama = Label(root, text="Masukkan Nama:")
+label_nama.grid(row=0, column=0, padx=10, pady=10)
+
+entry_nama = Entry(root)
+entry_nama.grid(row=0, column=1, padx=10, pady=10)
+
+# Tombol untuk absen
+tombol_absen = Button(root, text="Absen", command=tambah_absensi)
+tombol_absen.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+# Listbox untuk menampilkan data absensi
+listbox_data = Listbox(root, width=50)
+listbox_data.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+
+# Menampilkan data absensi saat aplikasi pertama kali dijalankan
+tampilkan_data()
+
+# Menjalankan aplikasi
+root.mainloop()
+
+# Menutup koneksi database saat aplikasi ditutup
+conn.close()
